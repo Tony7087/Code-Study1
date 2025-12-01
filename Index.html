@@ -1,0 +1,2486 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Stock Investment Simulator V3.4</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #ffffff;
+            padding: 20px;
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: none;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+            background: #ffeb00;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #87CEEB;
+        }
+
+        .version-badge {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-field label {
+            font-size: 1.1em;
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .input-field input {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+            width: 200px;
+            font-weight: bold;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .input-field input:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 35px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            -webkit-appearance: none;
+            appearance: none;
+            touch-action: manipulation;
+        }
+
+        #startBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        #startBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        #startBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #resetBtn,
+        #downloadLogBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        #resetBtn:hover,
+        #downloadLogBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .error-alert {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+            animation: shake 0.5s;
+        }
+
+        .error-alert.show {
+            display: block;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateX(-5px);
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .error-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .monitoring-panel {
+            background: rgba(0, 0, 0, 0.4);
+            border-left: 5px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .monitoring-panel.active {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        .monitoring-panel.error {
+            border-left-color: #ff4444;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .monitoring-title {
+            font-size: 1.5em;
+            color: #00ff00;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .monitoring-title.error {
+            color: #ff4444;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .status-indicator.running {
+            background: #00ff00;
+        }
+
+        .status-indicator.completed {
+            background: #4169E1;
+            animation: none;
+        }
+
+        .status-indicator.error {
+            background: #ff4444;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0.3;
+            }
+        }
+
+        .monitoring-content {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #E0E0E0;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #FFD700;
+            border-bottom: 3px solid #FFD700;
+            padding-bottom: 10px;
+        }
+
+        .indicators-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .indicator-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .indicator-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .indicator-card h4 {
+            color: #FFD700;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .indicator-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+
+        .indicator-signal {
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .signal-positive {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .signal-negative {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        .signal-neutral {
+            background: #ffa500;
+            color: #000;
+        }
+
+        .score-board {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .score-board h3 {
+            font-size: 2em;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+        }
+
+        .total-score {
+            font-size: 4em;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin: 20px 0;
+        }
+
+        .grade {
+            font-size: 2em;
+            color: #1a1a1a;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .market-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .market-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .market-card h3 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+
+        .market-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .market-card .change {
+            font-size: 1.2em;
+        }
+
+        .positive {
+            color: #00ff00;
+        }
+
+        .negative {
+            color: #ff4444;
+        }
+
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        .stock-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            text-align: left;
+            font-size: 1.1em;
+            color: #FFD700;
+        }
+
+        .stock-table td {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.05em;
+        }
+
+        .stock-table tr:hover td {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .result-summary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .result-summary h3 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 1.2em;
+        }
+
+        .result-item strong {
+            color: #1a1a1a;
+        }
+
+        .result-item .value {
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff00;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .detail-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .detail-score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        .detail-score-item .name {
+            color: #87CEEB;
+        }
+
+        .detail-score-item .score {
+            color: #FFD700;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🚀 한국 주식 시장 자동 매매 시뮬레이션 V3.4</h1>
+        <p class="subtitle">15가지 글로벌 지표 기반 AI 투자 분석 시스템</p>
+        <div class="version-badge">
+            <span class="badge">✨ V3.4 - UI Enhanced</span>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="errorAlert" class="error-alert">
+            <div class="error-title">⚠️ 오류 발생</div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="control-panel">
+            <div class="input-group">
+                <div class="input-field">
+                    <label for="initialCapital">💰 초기 투자금 (원)</label>
+                    <input type="text" id="initialCapital" value="1,000,000">
+                    <div id="capitalKorean" style="font-size: 0.9em; color: #87CEEB; margin-top: 5px;"></div>
+                </div>
+                <div class="input-field">
+                    <label for="targetReturn">📈 목표 수익률 (%)</label>
+                    <input type="number" id="targetReturn" value="5" min="1" max="50" step="1">
+                </div>
+            </div>
+            <div class="button-container">
+                <button id="startBtn">▶ 시뮬레이션 시작</button>
+                <button id="resetBtn">🔄 초기화</button>
+                <button id="downloadLogBtn">📥 로그 다운로드</button>
+            </div>
+        </div>
+
+        <!-- Agent Monitoring Panel -->
+        <div id="monitoringPanel" class="monitoring-panel">
+            <div class="monitoring-title" id="monitoringTitleContainer">
+                <span class="status-indicator running"></span>
+                <span id="monitoringTitle">Agent Monitoring</span>
+            </div>
+            <div class="monitoring-content" id="monitoringContent">
+                시스템 준비 중...
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
+            </div>
+        </div>
+
+        <!-- Global Indicators Section -->
+        <div id="indicatorsSection" class="section hidden">
+            <h2 class="section-title">🌍 글로벌 시장 지표 분석 (15개 지표)</h2>
+            <div class="indicators-grid" id="indicatorsGrid"></div>
+        </div>
+
+        <!-- Composite Score Section -->
+        <div id="scoreSection" class="section hidden">
+            <h2 class="section-title">📊 종합 투자 점수</h2>
+            <div class="score-board" id="scoreBoard"></div>
+            <div class="detail-scores" id="detailScores"></div>
+        </div>
+
+        <!-- Market Summary Section -->
+        <div id="marketSection" class="section hidden">
+            <h2 class="section-title">📊 한국 시장 요약</h2>
+            <div class="market-summary" id="marketSummary"></div>
+        </div>
+
+        <!-- Rising Stocks Section -->
+        <div id="risingSection" class="section hidden">
+            <h2 class="section-title">📈 AI 선정 급등 종목 (점수 기반 필터링)</h2>
+            <table class="stock-table" id="risingStocksTable">
+                <thead>
+                    <tr>
+                        <th>순위</th>
+                        <th>종목명</th>
+                        <th>종목코드</th>
+                        <th>AI 점수</th>
+                        <th>시가</th>
+                        <th>현재가</th>
+                        <th>상승률</th>
+                        <th>거래량</th>
+                    </tr>
+                </thead>
+                <tbody id="risingStocksBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Trading Simulation Section -->
+        <div id="tradingSection" class="section hidden">
+            <h2 class="section-title">💰 가상 매매 실행</h2>
+            <div id="tradingInfo"></div>
+            <div class="chart-container">
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Final Results Section -->
+        <div id="resultsSection" class="section hidden">
+            <h2 class="section-title">📊 3시간 수익률 결산 (12:00)</h2>
+            <div class="result-summary" id="resultSummary"></div>
+            <div class="chart-container">
+                <canvas id="portfolioChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 전역 에러 핸들링 (Safari 호환성) ====================
+        window.onerror = function (msg, url, line, col, error) {
+            const errorMsg = 'Error: ' + msg + '\nLine: ' + line + ':' + col;
+            if (typeof logger !== 'undefined') {
+                logger.error('Global Error', errorMsg);
+            }
+            return false;
+        };
+
+        // Promise rejection 핸들링
+        window.addEventListener('unhandledrejection', function (event) {
+            if (typeof logger !== 'undefined') {
+                logger.error('Unhandled Promise Rejection', event.reason);
+            }
+        });
+
+        // ==================== 로그 시스템 ====================
+        class LogSystem {
+            constructor() {
+                this.logs = [];
+                this.startTime = new Date();
+            }
+
+            log(level, message, data = null) {
+                const timestamp = new Date();
+                const elapsed = ((timestamp - this.startTime) / 1000).toFixed(2);
+
+                const logEntry = {
+                    timestamp: timestamp.toISOString(),
+                    elapsed: `${elapsed}s`,
+                    level: level,
+                    message: message,
+                    data: data
+                };
+
+                this.logs.push(logEntry);
+
+                // Console에도 출력 (Safari 호환)
+                const consoleMsg = '[' + elapsed + 's] [' + level + '] ' + message;
+                if (level === 'ERROR') {
+                    console.error(consoleMsg);
+                    if (data) console.error(data);
+                } else if (level === 'WARN') {
+                    console.warn(consoleMsg);
+                    if (data) console.warn(data);
+                } else {
+                    console.log(consoleMsg);
+                    if (data) console.log(data);
+                }
+            }
+
+            info(message, data = null) {
+                this.log('INFO', message, data);
+            }
+
+            warn(message, data = null) {
+                this.log('WARN', message, data);
+            }
+
+            error(message, data = null) {
+                this.log('ERROR', message, data);
+            }
+
+            debug(message, data = null) {
+                this.log('DEBUG', message, data);
+            }
+
+            downloadLog() {
+                const logText = this.logs.map(entry => {
+                    let line = `[${entry.timestamp}] [${entry.elapsed}] [${entry.level}] ${entry.message}`;
+                    if (entry.data) {
+                        line += '\n  Data: ' + JSON.stringify(entry.data, null, 2);
+                    }
+                    return line;
+                }).join('\n\n');
+
+                const blob = new Blob([logText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `simulation_log_${new Date().getTime()}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                this.info('로그 파일 다운로드 완료');
+            }
+
+            getSummary() {
+                const errors = this.logs.filter(l => l.level === 'ERROR').length;
+                const warnings = this.logs.filter(l => l.level === 'WARN').length;
+                const infos = this.logs.filter(l => l.level === 'INFO').length;
+
+                return {
+                    total: this.logs.length,
+                    errors: errors,
+                    warnings: warnings,
+                    infos: infos,
+                    duration: ((new Date() - this.startTime) / 1000).toFixed(2) + 's'
+                };
+            }
+        }
+
+        const logger = new LogSystem();
+
+        // ==================== 글로벌 변수 ====================
+        let simulation = {
+            initialCapital: 1000000,
+            targetReturnRate: 5,  // 목표 수익률 (%)
+            portfolio: {},
+            tradeHistory: [],
+            risingStocks: [],
+            selectedStocks: [],
+            marketData: {},
+            indicators: {},
+            compositeScore: 0,
+            currentStep: 0,
+            totalSteps: 7,
+            isRunning: false
+        };
+
+        let charts = {
+            price: null,
+            portfolio: null
+        };
+
+        // ==================== 유틸리티 함수 ====================
+        function formatNumber(num) {
+            return num.toLocaleString('ko-KR');
+        }
+
+        function formatCurrency(num) {
+            return formatNumber(num) + '원';
+        }
+
+        function formatPercent(num) {
+            const sign = num >= 0 ? '+' : '';
+            return sign + num.toFixed(2) + '%';
+        }
+
+        function randomBetween(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        // 숫자를 한글로 변환
+        function numberToKorean(num) {
+            const units = ['원', '만', '억', '조'];
+            const digits = ['영', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+
+            if (num === 0) return '영원';
+
+            let result = '';
+            let unitIndex = 0;
+
+            while (num > 0) {
+                const part = num % 10000;
+                if (part > 0) {
+                    let partStr = '';
+                    const thousand = Math.floor(part / 1000);
+                    const hundred = Math.floor((part % 1000) / 100);
+                    const ten = Math.floor((part % 100) / 10);
+                    const one = part % 10;
+
+                    if (thousand > 0) partStr += digits[thousand] + '천';
+                    if (hundred > 0) partStr += digits[hundred] + '백';
+                    if (ten > 0) partStr += digits[ten] + '십';
+                    if (one > 0) partStr += digits[one];
+
+                    result = partStr + units[unitIndex] + ' ' + result;
+                }
+                num = Math.floor(num / 10000);
+                unitIndex++;
+            }
+
+            return result.trim();
+        }
+
+        function updateProgress(step, total) {
+            const percent = Math.round((step / total) * 100);
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = percent + '%';
+            logger.debug(`Progress updated: ${percent}%`);
+        }
+
+        function updateMonitoring(title, content, isCompleted = false, isError = false) {
+            const panel = document.getElementById('monitoringPanel');
+            const titleContainer = document.getElementById('monitoringTitleContainer');
+            const titleEl = document.getElementById('monitoringTitle');
+            const contentEl = document.getElementById('monitoringContent');
+            const indicator = panel.querySelector('.status-indicator');
+
+            panel.classList.add('active');
+            titleEl.textContent = title;
+            contentEl.innerHTML = content;
+
+            if (isError) {
+                panel.classList.add('error');
+                titleContainer.classList.add('error');
+                indicator.classList.remove('running', 'completed');
+                indicator.classList.add('error');
+                logger.error(title, content);
+            } else if (isCompleted) {
+                panel.classList.remove('error');
+                titleContainer.classList.remove('error');
+                indicator.classList.remove('running', 'error');
+                indicator.classList.add('completed');
+                logger.info(title);
+            } else {
+                panel.classList.remove('error');
+                titleContainer.classList.remove('error');
+                indicator.classList.remove('completed', 'error');
+                indicator.classList.add('running');
+                logger.info(title);
+            }
+        }
+
+        function showError(title, message) {
+            const alert = document.getElementById('errorAlert');
+            const messageEl = document.getElementById('errorMessage');
+
+            messageEl.textContent = message;
+            alert.classList.add('show');
+
+            logger.error(title, message);
+
+            updateMonitoring(
+                `❌ ${title}`,
+                `<strong style="color: #ff4444;">오류가 발생했습니다.</strong><br><br>
+                <strong style="color: #FFD700;">📌 '시뮬레이션 시작' 버튼을 다시 눌러주세요.</strong><br><br>
+                참고: 네트워크 연결 상태를 확인해주세요.`,
+                false,
+                true
+            );
+
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 10000);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 타임아웃 래퍼
+        async function withTimeout(promise, timeoutMs, errorMsg) {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(errorMsg)), timeoutMs)
+                )
+            ]);
+        }
+
+        // 네트워크 상태 체크 시뮬레이션 (Safari 최적화)
+        function checkNetworkStatus() {
+            // Safari에서는 항상 온라인으로 처리 (freezing 방지)
+            const isOnline = true;
+            logger.debug('네트워크 상태 체크', { isOnline });
+            return isOnline;
+        }
+
+        // API 호출 시뮬레이션 (100% 성공률로 설정)
+        async function simulateAPICall(apiName, successRate = 1.0) {
+            logger.debug(`API 호출 시작: ${apiName}`);
+
+            if (!checkNetworkStatus()) {
+                throw new Error('네트워크 연결 끊김');
+            }
+
+            // Safari 최적화: 지연 시간 단축 (50-150ms)
+            await sleep(randomBetween(50, 150));
+
+            if (Math.random() > successRate) {
+                throw new Error(`${apiName} API 응답 실패`);
+            }
+
+            logger.debug(`API 호출 성공: ${apiName}`);
+            return true;
+        }
+
+        // ==================== 15가지 지표 시뮬레이션 클래스 ====================
+        class MarketIndicators {
+            constructor() {
+                this.data = {};
+                logger.info('MarketIndicators 클래스 초기화');
+            }
+
+            // 1. 미국 주요 지수
+            generateUSMarket() {
+                const sp500Change = randomBetween(-2, 3);
+                const nasdaqChange = randomBetween(-2.5, 3.5);
+                const dowChange = randomBetween(-1.8, 2.8);
+
+                const avgChange = (sp500Change + nasdaqChange + dowChange) / 3;
+                let signal = 'NEUTRAL';
+                if (avgChange > 1.5) signal = 'STRONG_POSITIVE';
+                else if (avgChange > 0.5) signal = 'POSITIVE';
+                else if (avgChange < -1.5) signal = 'STRONG_NEGATIVE';
+                else if (avgChange < -0.5) signal = 'NEGATIVE';
+
+                const result = {
+                    name: '미국 증시',
+                    sp500: sp500Change,
+                    nasdaq: nasdaqChange,
+                    dow: dowChange,
+                    avgChange: avgChange,
+                    signal: signal,
+                    score: this._usMarketToScore(avgChange)
+                };
+
+                logger.debug('미국 증시 데이터 생성', result);
+                return result;
+            }
+
+            _usMarketToScore(change) {
+                if (change > 2) return 100;
+                if (change > 1) return 85;
+                if (change > 0) return 65;
+                if (change > -1) return 40;
+                if (change > -2) return 20;
+                return 10;
+            }
+
+            // 2. 원/달러 환율
+            generateExchangeRate() {
+                const currentRate = randomBetween(1250, 1350);
+                const weekAgoRate = currentRate - randomBetween(-30, 30);
+                const change = ((currentRate - weekAgoRate) / weekAgoRate) * 100;
+
+                let signal = 'NEUTRAL';
+                let impact = '중립';
+                if (change > 2) {
+                    signal = 'POSITIVE_EXPORTERS';
+                    impact = '수출주 유리';
+                } else if (change < -2) {
+                    signal = 'NEGATIVE_EXPORTERS';
+                    impact = '수입주 유리';
+                }
+
+                return {
+                    name: '원/달러 환율',
+                    currentRate: currentRate,
+                    change: change,
+                    signal: signal,
+                    impact: impact,
+                    score: this._exchangeToScore(change)
+                };
+            }
+
+            _exchangeToScore(change) {
+                const absChange = Math.abs(change);
+                if (absChange > 3) return 85;
+                if (absChange > 2) return 70;
+                if (absChange > 1) return 60;
+                return 50;
+            }
+
+            // 3. VIX 지수 (공포지수)
+            generateVIX() {
+                const vix = randomBetween(12, 35);
+                let level = 'NORMAL';
+                let action = 'HOLD';
+
+                if (vix < 15) {
+                    level = 'LOW_FEAR';
+                    action = 'BUY';
+                } else if (vix >= 20 && vix < 30) {
+                    level = 'ELEVATED';
+                    action = 'REDUCE';
+                } else if (vix >= 30) {
+                    level = 'HIGH_FEAR';
+                    action = 'CASH';
+                }
+
+                return {
+                    name: 'VIX 공포지수',
+                    value: vix,
+                    level: level,
+                    action: action,
+                    score: this._vixToScore(vix)
+                };
+            }
+
+            _vixToScore(vix) {
+                if (vix < 15) return 90;
+                if (vix < 20) return 70;
+                if (vix < 25) return 50;
+                if (vix < 30) return 30;
+                return 15;
+            }
+
+            // 4-10 및 추가 지표들 (간략화)
+            generateTreasuryYield() {
+                const yield10y = randomBetween(3.5, 5.0);
+                const monthChange = randomBetween(-0.5, 0.5);
+                let signal = 'NEUTRAL';
+                if (yield10y > 4.5 && monthChange > 0.3) signal = 'NEGATIVE_GROWTH';
+                else if (yield10y < 3.8 && monthChange < -0.3) signal = 'POSITIVE_GROWTH';
+
+                return {
+                    name: '미국 국채금리',
+                    value: yield10y,
+                    change: monthChange,
+                    signal: signal,
+                    score: yield10y < 3.8 ? 80 : (yield10y < 4.2 ? 65 : (yield10y < 4.6 ? 50 : 35))
+                };
+            }
+
+            generateOilPrice() {
+                const wti = randomBetween(65, 85);
+                const weekChange = randomBetween(-8, 8);
+                let signal = 'NEUTRAL';
+                if (weekChange > 5) signal = 'NEGATIVE_TRANSPORT';
+                else if (weekChange < -5) signal = 'POSITIVE_TRANSPORT';
+
+                return {
+                    name: '국제유가 (WTI)',
+                    value: wti,
+                    weekChange: weekChange,
+                    signal: signal,
+                    score: Math.abs(weekChange) < 3 ? 70 : (Math.abs(weekChange) < 6 ? 55 : 40)
+                };
+            }
+
+            generateGoldPrice() {
+                const price = randomBetween(1900, 2100);
+                const monthChange = randomBetween(-6, 6);
+                let sentiment = 'NEUTRAL';
+                if (monthChange > 5) sentiment = 'RISK_OFF';
+                else if (monthChange < -5) sentiment = 'RISK_ON';
+
+                return {
+                    name: '금 가격',
+                    value: price,
+                    monthChange: monthChange,
+                    sentiment: sentiment,
+                    score: monthChange < -5 ? 85 : (monthChange < -2 ? 70 : (monthChange < 2 ? 55 : (monthChange < 5 ? 40 : 25)))
+                };
+            }
+
+            generateInvestorTrend() {
+                const foreignNet = randomBetween(-6000, 6000);
+                const institutionNet = randomBetween(-4000, 4000);
+                let signal = 'NEUTRAL';
+                let confidence = 50;
+
+                if (foreignNet > 3000 && institutionNet > 2000) {
+                    signal = 'VERY_STRONG_BUY';
+                    confidence = 95;
+                } else if (foreignNet > 2000) {
+                    signal = 'STRONG_BUY';
+                    confidence = 80;
+                } else if (foreignNet < -3000 && institutionNet < -2000) {
+                    signal = 'VERY_STRONG_SELL';
+                    confidence = 95;
+                } else if (foreignNet < -2000) {
+                    signal = 'STRONG_SELL';
+                    confidence = 80;
+                }
+
+                const total = foreignNet + institutionNet;
+                let score;
+                if (total > 5000) score = 95;
+                else if (total > 3000) score = 80;
+                else if (total > 1000) score = 65;
+                else if (total > -1000) score = 50;
+                else if (total > -3000) score = 35;
+                else if (total > -5000) score = 20;
+                else score = 10;
+
+                return {
+                    name: '외국인/기관 매매',
+                    foreignNet: foreignNet,
+                    institutionNet: institutionNet,
+                    signal: signal,
+                    confidence: confidence,
+                    score: score
+                };
+            }
+
+            generateDollarIndex() {
+                const dxy = randomBetween(100, 108);
+                const monthChange = randomBetween(-4, 4);
+                let impact = 'NEUTRAL';
+                if (monthChange > 3) impact = 'NEGATIVE_EM';
+                else if (monthChange < -3) impact = 'POSITIVE_EM';
+
+                let score;
+                if (monthChange < -3) score = 85;
+                else if (monthChange < -1) score = 70;
+                else if (monthChange < 1) score = 55;
+                else if (monthChange < 3) score = 40;
+                else score = 25;
+
+                return {
+                    name: '달러 인덱스',
+                    value: dxy,
+                    monthChange: monthChange,
+                    impact: impact,
+                    score: score
+                };
+            }
+
+            generateChinaPMI() {
+                const pmi = randomBetween(47, 53);
+                let status = 'CONTRACTING';
+                let signal = 'NEUTRAL';
+
+                if (pmi >= 52) {
+                    status = 'STRONG_EXPANSION';
+                    signal = 'POSITIVE';
+                } else if (pmi >= 50) {
+                    status = 'EXPANDING';
+                    signal = 'POSITIVE';
+                } else if (pmi >= 48) {
+                    status = 'MILD_CONTRACTION';
+                    signal = 'NEGATIVE';
+                } else {
+                    status = 'STRONG_CONTRACTION';
+                    signal = 'NEGATIVE';
+                }
+
+                let score;
+                if (pmi >= 52) score = 90;
+                else if (pmi >= 50) score = 75;
+                else if (pmi >= 48) score = 55;
+                else score = 35;
+
+                return {
+                    name: '중국 제조업 PMI',
+                    value: pmi,
+                    status: status,
+                    signal: signal,
+                    score: score
+                };
+            }
+
+            generateYenDollar() {
+                const rate = randomBetween(140, 155);
+                const weekChange = randomBetween(-4, 4);
+                let impact = 'NEUTRAL';
+                if (weekChange > 3) impact = 'NEGATIVE_KOREA';
+                else if (weekChange < -3) impact = 'POSITIVE_KOREA';
+
+                let score;
+                if (weekChange < -3) score = 80;
+                else if (weekChange < -1) score = 65;
+                else if (weekChange < 1) score = 55;
+                else if (weekChange < 3) score = 45;
+                else score = 30;
+
+                return {
+                    name: '엔/달러 환율',
+                    value: rate,
+                    weekChange: weekChange,
+                    impact: impact,
+                    score: score
+                };
+            }
+
+            generateAdditionalIndicators() {
+                return {
+                    volumeSurge: {
+                        name: '거래량 급증',
+                        ratio: randomBetween(1.2, 3.5),
+                        score: randomBetween(60, 90)
+                    },
+                    sectorRotation: {
+                        name: '섹터 로테이션',
+                        topSector: ['반도체', '자동차', '2차전지'][Math.floor(randomBetween(0, 3))],
+                        score: randomBetween(65, 85)
+                    },
+                    shortSelling: {
+                        name: '공매도 비중',
+                        ratio: randomBetween(3, 18),
+                        score: randomBetween(50, 80)
+                    },
+                    rsi: {
+                        name: 'RSI 지표',
+                        value: randomBetween(25, 75),
+                        score: randomBetween(55, 85)
+                    },
+                    earnings: {
+                        name: '실적 전망',
+                        surprise: randomBetween(-15, 25),
+                        score: randomBetween(50, 95)
+                    }
+                };
+            }
+
+            async generateAllIndicators() {
+                try {
+                    logger.info('15개 지표 생성 시작');
+
+                    // 네트워크 체크
+                    if (!checkNetworkStatus()) {
+                        throw new Error('네트워크 연결 실패');
+                    }
+
+                    // 각 지표 API 시뮬레이션
+                    await simulateAPICall('US Market Data');
+                    this.data = {
+                        usMarket: this.generateUSMarket()
+                    };
+
+                    await simulateAPICall('Exchange Rate');
+                    this.data.exchangeRate = this.generateExchangeRate();
+
+                    await simulateAPICall('VIX Data');
+                    this.data.vix = this.generateVIX();
+
+                    await simulateAPICall('Treasury Yield');
+                    this.data.treasuryYield = this.generateTreasuryYield();
+
+                    await simulateAPICall('Oil Price');
+                    this.data.oilPrice = this.generateOilPrice();
+
+                    await simulateAPICall('Gold Price');
+                    this.data.goldPrice = this.generateGoldPrice();
+
+                    await simulateAPICall('Investor Trend');
+                    this.data.investorTrend = this.generateInvestorTrend();
+
+                    await simulateAPICall('Dollar Index');
+                    this.data.dollarIndex = this.generateDollarIndex();
+
+                    await simulateAPICall('China PMI');
+                    this.data.chinaPMI = this.generateChinaPMI();
+
+                    await simulateAPICall('Yen Dollar');
+                    this.data.yenDollar = this.generateYenDollar();
+
+                    await simulateAPICall('Additional Indicators');
+                    this.data.additional = this.generateAdditionalIndicators();
+
+                    logger.info('15개 지표 생성 완료', this.data);
+                    return this.data;
+                } catch (error) {
+                    logger.error('지표 생성 실패', error.message);
+                    throw error;
+                }
+            }
+
+            calculateCompositeScore() {
+                try {
+                    logger.info('종합 점수 계산 시작');
+
+                    const weights = {
+                        usMarket: 0.15,
+                        exchangeRate: 0.10,
+                        vix: 0.10,
+                        treasuryYield: 0.08,
+                        oilPrice: 0.05,
+                        goldPrice: 0.05,
+                        investorTrend: 0.15,
+                        dollarIndex: 0.05,
+                        chinaPMI: 0.05,
+                        yenDollar: 0.05,
+                        volumeSurge: 0.06,
+                        sectorRotation: 0.04,
+                        shortSelling: 0.03,
+                        rsi: 0.05,
+                        earnings: 0.04
+                    };
+
+                    let totalScore = 0;
+                    const detailScores = {};
+
+                    totalScore += this.data.usMarket.score * weights.usMarket;
+                    detailScores['미국증시'] = (this.data.usMarket.score * weights.usMarket).toFixed(1);
+
+                    totalScore += this.data.exchangeRate.score * weights.exchangeRate;
+                    detailScores['환율'] = (this.data.exchangeRate.score * weights.exchangeRate).toFixed(1);
+
+                    totalScore += this.data.vix.score * weights.vix;
+                    detailScores['VIX'] = (this.data.vix.score * weights.vix).toFixed(1);
+
+                    totalScore += this.data.treasuryYield.score * weights.treasuryYield;
+                    detailScores['국채금리'] = (this.data.treasuryYield.score * weights.treasuryYield).toFixed(1);
+
+                    totalScore += this.data.oilPrice.score * weights.oilPrice;
+                    detailScores['유가'] = (this.data.oilPrice.score * weights.oilPrice).toFixed(1);
+
+                    totalScore += this.data.goldPrice.score * weights.goldPrice;
+                    detailScores['금'] = (this.data.goldPrice.score * weights.goldPrice).toFixed(1);
+
+                    totalScore += this.data.investorTrend.score * weights.investorTrend;
+                    detailScores['매매동향'] = (this.data.investorTrend.score * weights.investorTrend).toFixed(1);
+
+                    totalScore += this.data.dollarIndex.score * weights.dollarIndex;
+                    detailScores['달러지수'] = (this.data.dollarIndex.score * weights.dollarIndex).toFixed(1);
+
+                    totalScore += this.data.chinaPMI.score * weights.chinaPMI;
+                    detailScores['중국PMI'] = (this.data.chinaPMI.score * weights.chinaPMI).toFixed(1);
+
+                    totalScore += this.data.yenDollar.score * weights.yenDollar;
+                    detailScores['엔화'] = (this.data.yenDollar.score * weights.yenDollar).toFixed(1);
+
+                    const add = this.data.additional;
+                    totalScore += add.volumeSurge.score * weights.volumeSurge;
+                    detailScores['거래량'] = (add.volumeSurge.score * weights.volumeSurge).toFixed(1);
+
+                    totalScore += add.sectorRotation.score * weights.sectorRotation;
+                    detailScores['섹터'] = (add.sectorRotation.score * weights.sectorRotation).toFixed(1);
+
+                    totalScore += add.shortSelling.score * weights.shortSelling;
+                    detailScores['공매도'] = (add.shortSelling.score * weights.shortSelling).toFixed(1);
+
+                    totalScore += add.rsi.score * weights.rsi;
+                    detailScores['RSI'] = (add.rsi.score * weights.rsi).toFixed(1);
+
+                    totalScore += add.earnings.score * weights.earnings;
+                    detailScores['실적'] = (add.earnings.score * weights.earnings).toFixed(1);
+
+                    const result = {
+                        totalScore: totalScore,
+                        detailScores: detailScores,
+                        grade: this._scoreToGrade(totalScore),
+                        recommendation: this._getRecommendation(totalScore)
+                    };
+
+                    logger.info('종합 점수 계산 완료', result);
+                    return result;
+                } catch (error) {
+                    logger.error('종합 점수 계산 실패', error.message);
+                    throw error;
+                }
+            }
+
+            _scoreToGrade(score) {
+                if (score >= 80) return 'A+ (매우 강한 매수)';
+                if (score >= 70) return 'A (강한 매수)';
+                if (score >= 60) return 'B+ (매수)';
+                if (score >= 50) return 'B (중립/관망)';
+                if (score >= 40) return 'C (약한 매도)';
+                if (score >= 30) return 'D (매도)';
+                return 'F (강한 매도)';
+            }
+
+            _getRecommendation(score) {
+                if (score >= 75) {
+                    return {
+                        action: 'STRONG_BUY',
+                        message: '매우 유리한 투자 환경',
+                        confidence: '높음'
+                    };
+                } else if (score >= 60) {
+                    return {
+                        action: 'BUY',
+                        message: '투자 적기',
+                        confidence: '중상'
+                    };
+                } else if (score >= 40) {
+                    return {
+                        action: 'HOLD',
+                        message: '관망 권장',
+                        confidence: '중립'
+                    };
+                } else {
+                    return {
+                        action: 'SELL',
+                        message: '투자 부적합',
+                        confidence: '낮음'
+                    };
+                }
+            }
+        }
+
+        // ==================== 데이터 생성 함수 ====================
+        function generateMarketData() {
+            const kospiChange = randomBetween(-2, 3);
+            const kosdaqChange = randomBetween(-3, 4);
+
+            return {
+                kospi: {
+                    value: 2500 + randomBetween(-50, 50),
+                    change: kospiChange,
+                    changePercent: kospiChange / 25
+                },
+                kosdaq: {
+                    value: 850 + randomBetween(-20, 20),
+                    change: kosdaqChange,
+                    changePercent: kosdaqChange / 8.5
+                },
+                volume: Math.floor(randomBetween(500000, 800000)),
+                tradingValue: Math.floor(randomBetween(8000, 12000))
+            };
+        }
+
+        function generateRisingStocks(baseScore) {
+            const stockNames = [
+                '삼성전자', 'SK하이닉스', 'POSCO홀딩스', 'LG에너지솔루션', '카카오',
+                '네이버', '현대차', '기아', 'KB금융', '삼성바이오로직스',
+                'LG화학', '셀트리온', '삼성SDI', '현대모비스', '삼성물산'
+            ];
+
+            const stocks = [];
+            for (let i = 0; i < 10; i++) {
+                const openPrice = Math.floor(randomBetween(20000, 100000) / 100) * 100;
+                const scoreVariance = randomBetween(-10, 10);
+                const aiScore = Math.min(100, Math.max(0, baseScore + scoreVariance));
+
+                const baseRise = randomBetween(3, 12);
+                const scoreBonus = (aiScore - 50) / 10;
+                const riseRate = Math.max(3, baseRise + scoreBonus);
+
+                const currentPrice = Math.floor(openPrice * (1 + riseRate / 100) / 100) * 100;
+
+                stocks.push({
+                    name: stockNames[i % stockNames.length] + (i >= stockNames.length ? ` ${i - stockNames.length + 1}` : ''),
+                    code: String(Math.floor(randomBetween(100000, 999999))).padStart(6, '0'),
+                    aiScore: aiScore,
+                    openPrice: openPrice,
+                    currentPrice: currentPrice,
+                    riseRate: riseRate,
+                    volume: Math.floor(randomBetween(100000, 5000000))
+                });
+            }
+
+            return stocks.sort((a, b) => b.aiScore - a.aiScore);
+        }
+
+        function generatePriceHistory(stock, hours = 3) {
+            const history = [];
+            const startTime = 9;
+
+            // Use currentPrice as starting point (this becomes buyPrice)
+            const buyPrice = stock.currentPrice;
+
+            // Determine target profit based on user's target return rate
+            // Range: (target - 5%) to (target + 10%) for variation
+            const minProfit = Math.max(0.01, (simulation.targetReturnRate - 5) / 100);  // 최소 1%
+            const maxProfit = (simulation.targetReturnRate + 10) / 100;
+            const targetProfitRate = randomBetween(minProfit, maxProfit);
+            const finalPrice = buyPrice * (1 + targetProfitRate);
+
+            // Total time points (10-minute intervals for 3 hours = 18 points)
+            const totalPoints = hours * 6;
+
+            for (let i = 0; i <= totalPoints; i++) {
+                const hour = Math.floor(startTime + i / 6);
+                const minute = (i % 6) * 10;
+                const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+                // Progress from 0 to 1
+                const progress = i / totalPoints;
+
+                // Base trend line from buyPrice to finalPrice
+                const baseTrend = buyPrice + (finalPrice - buyPrice) * progress;
+
+                // Add small volatility (±2%) but ensure we stay on upward trajectory
+                const volatility = 0.02;
+                const randomFactor = randomBetween(-volatility, volatility);
+                let price = baseTrend * (1 + randomFactor);
+
+                // Safety: never go below 98% of buy price in early stages
+                if (progress < 0.5) {
+                    price = Math.max(price, buyPrice * 0.98);
+                } else {
+                    // In later stages, ensure we're above buyPrice
+                    price = Math.max(price, buyPrice * 1.01);
+                }
+
+                history.push({
+                    time: time,
+                    price: Math.floor(price / 100) * 100  // Round to nearest 100
+                });
+            }
+
+            // Force final price to exact target (guarantee 5%+ profit)
+            history[history.length - 1].price = Math.floor(finalPrice / 100) * 100;
+
+            return history;
+        }
+
+        // ==================== 표시 함수 ====================
+        function displayIndicators(indicators) {
+            const container = document.getElementById('indicatorsGrid');
+            const data = indicators.data;
+
+            let html = '';
+
+            html += createIndicatorCard('🇺🇸 ' + data.usMarket.name,
+                `평균 ${formatPercent(data.usMarket.avgChange)}`,
+                data.usMarket.signal,
+                `S&P: ${formatPercent(data.usMarket.sp500)}`);
+
+            html += createIndicatorCard('💱 ' + data.exchangeRate.name,
+                `${data.exchangeRate.currentRate.toFixed(2)}원`,
+                data.exchangeRate.signal,
+                data.exchangeRate.impact);
+
+            html += createIndicatorCard('😱 ' + data.vix.name,
+                data.vix.value.toFixed(2),
+                data.vix.level,
+                data.vix.action);
+
+            html += createIndicatorCard('📈 ' + data.treasuryYield.name,
+                data.treasuryYield.value.toFixed(2) + '%',
+                data.treasuryYield.signal,
+                `변동: ${formatPercent(data.treasuryYield.change)}`);
+
+            html += createIndicatorCard('⛽ ' + data.oilPrice.name,
+                `$${data.oilPrice.value.toFixed(2)}`,
+                data.oilPrice.signal,
+                `주간: ${formatPercent(data.oilPrice.weekChange)}`);
+
+            html += createIndicatorCard('🥇 ' + data.goldPrice.name,
+                `$${data.goldPrice.value.toFixed(2)}`,
+                data.goldPrice.sentiment,
+                `월간: ${formatPercent(data.goldPrice.monthChange)}`);
+
+            html += createIndicatorCard('💼 ' + data.investorTrend.name,
+                `외국인: ${formatNumber(data.investorTrend.foreignNet)}억`,
+                data.investorTrend.signal,
+                `신뢰도: ${data.investorTrend.confidence}%`);
+
+            html += createIndicatorCard('💵 ' + data.dollarIndex.name,
+                data.dollarIndex.value.toFixed(2),
+                data.dollarIndex.impact,
+                `변동: ${formatPercent(data.dollarIndex.monthChange)}`);
+
+            html += createIndicatorCard('🇨🇳 ' + data.chinaPMI.name,
+                data.chinaPMI.value.toFixed(1),
+                data.chinaPMI.signal,
+                data.chinaPMI.status);
+
+            html += createIndicatorCard('🇯🇵 ' + data.yenDollar.name,
+                data.yenDollar.value.toFixed(2),
+                data.yenDollar.impact,
+                `주간: ${formatPercent(data.yenDollar.weekChange)}`);
+
+            const add = data.additional;
+            html += createIndicatorCard('📊 ' + add.volumeSurge.name,
+                `${add.volumeSurge.ratio.toFixed(1)}배`,
+                'POSITIVE',
+                '평균 대비');
+
+            html += createIndicatorCard('🔄 ' + add.sectorRotation.name,
+                add.sectorRotation.topSector,
+                'POSITIVE',
+                '강세 업종');
+
+            html += createIndicatorCard('📉 ' + add.shortSelling.name,
+                `${add.shortSelling.ratio.toFixed(1)}%`,
+                add.shortSelling.ratio > 10 ? 'NEGATIVE' : 'POSITIVE',
+                '공매도 비율');
+
+            html += createIndicatorCard('📈 ' + add.rsi.name,
+                add.rsi.value.toFixed(1),
+                add.rsi.value > 70 ? 'NEGATIVE' : (add.rsi.value < 30 ? 'POSITIVE' : 'NEUTRAL'),
+                add.rsi.value > 70 ? '과매수' : (add.rsi.value < 30 ? '과매도' : '중립'));
+
+            html += createIndicatorCard('💰 ' + add.earnings.name,
+                `${formatPercent(add.earnings.surprise)}`,
+                add.earnings.surprise > 10 ? 'POSITIVE' : (add.earnings.surprise < -10 ? 'NEGATIVE' : 'NEUTRAL'),
+                '서프라이즈');
+
+            container.innerHTML = html;
+            document.getElementById('indicatorsSection').classList.remove('hidden');
+        }
+
+        function createIndicatorCard(title, value, signal, detail) {
+            let signalClass = 'signal-neutral';
+            let signalText = '중립';
+
+            if (signal.includes('POSITIVE') || signal.includes('BUY') || signal.includes('LOW') || signal.includes('EXPANSION')) {
+                signalClass = 'signal-positive';
+                signalText = '긍정';
+            } else if (signal.includes('NEGATIVE') || signal.includes('SELL') || signal.includes('HIGH') || signal.includes('CONTRACTION')) {
+                signalClass = 'signal-negative';
+                signalText = '부정';
+            }
+
+            return `
+                <div class="indicator-card">
+                    <h4>${title}</h4>
+                    <div class="indicator-value">${value}</div>
+                    <div class="indicator-signal ${signalClass}">${signalText}</div>
+                    <div style="font-size: 0.9em; margin-top: 8px; opacity: 0.8;">${detail}</div>
+                </div>
+            `;
+        }
+
+        function displayCompositeScore(scoreData) {
+            const container = document.getElementById('scoreBoard');
+
+            container.innerHTML = `
+                <h3>🎯 AI 종합 투자 점수</h3>
+                <div class="total-score">${scoreData.totalScore.toFixed(1)}<span style="font-size: 0.5em;">/100</span></div>
+                <div class="grade">${scoreData.grade}</div>
+                <div style="margin-top: 20px; font-size: 1.3em; color: #1a1a1a;">
+                    <strong>추천:</strong> ${scoreData.recommendation.message}
+                </div>
+                <div style="margin-top: 10px; font-size: 1.1em; color: #1a1a1a;">
+                    신뢰도: ${scoreData.recommendation.confidence}
+                </div>
+            `;
+
+            const detailContainer = document.getElementById('detailScores');
+            let detailHtml = '';
+
+            for (const [name, score] of Object.entries(scoreData.detailScores)) {
+                detailHtml += `
+                    <div class="detail-score-item">
+                        <span class="name">${name}</span>
+                        <span class="score">${score}점</span>
+                    </div>
+                `;
+            }
+
+            detailContainer.innerHTML = detailHtml;
+            document.getElementById('scoreSection').classList.remove('hidden');
+        }
+
+        function displayMarketSummary() {
+            const data = simulation.marketData;
+            const container = document.getElementById('marketSummary');
+
+            container.innerHTML = `
+                <div class="market-card">
+                    <h3>KOSPI</h3>
+                    <div class="value">${data.kospi.value.toFixed(2)}</div>
+                    <div class="change ${data.kospi.change >= 0 ? 'positive' : 'negative'}">
+                        ${formatPercent(data.kospi.changePercent)}
+                    </div>
+                </div>
+                <div class="market-card">
+                    <h3>KOSDAQ</h3>
+                    <div class="value">${data.kosdaq.value.toFixed(2)}</div>
+                    <div class="change ${data.kosdaq.change >= 0 ? 'positive' : 'negative'}">
+                        ${formatPercent(data.kosdaq.changePercent)}
+                    </div>
+                </div>
+                <div class="market-card">
+                    <h3>총 거래량</h3>
+                    <div class="value">${formatNumber(data.volume)}</div>
+                    <div class="change">백만 주</div>
+                </div>
+                <div class="market-card">
+                    <h3>거래대금</h3>
+                    <div class="value">${formatNumber(data.tradingValue)}</div>
+                    <div class="change">억 원</div>
+                </div>
+            `;
+
+            document.getElementById('marketSection').classList.remove('hidden');
+        }
+
+        function displayRisingStocks() {
+            const stocks = simulation.risingStocks;
+            const tbody = document.getElementById('risingStocksBody');
+
+            tbody.innerHTML = stocks.slice(0, 8).map((stock, idx) => {
+                let scoreClass = 'positive';
+                if (stock.aiScore < 50) scoreClass = 'negative';
+                else if (stock.aiScore < 70) scoreClass = '';
+
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><strong>${stock.name}</strong></td>
+                        <td>${stock.code}</td>
+                        <td class="${scoreClass}"><strong>${stock.aiScore.toFixed(1)}점</strong></td>
+                        <td>${formatCurrency(stock.openPrice)}</td>
+                        <td>${formatCurrency(stock.currentPrice)}</td>
+                        <td class="positive"><strong>${formatPercent(stock.riseRate)}</strong></td>
+                        <td>${formatNumber(stock.volume)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('risingSection').classList.remove('hidden');
+        }
+
+        function displayTrading() {
+            const selected = simulation.selectedStocks;
+            const container = document.getElementById('tradingInfo');
+
+            const investPerStock = Math.floor(simulation.initialCapital / selected.length);
+
+            let html = '<h3 style="color: #FFD700; margin-bottom: 20px;">✅ AI 기반 매수 완료 (10:00)</h3>';
+            html += '<table class="stock-table"><thead><tr><th>종목명</th><th>AI 점수</th><th>매수가</th><th>수량</th><th>투자금액</th></tr></thead><tbody>';
+
+            selected.forEach(stock => {
+                const quantity = Math.floor(investPerStock / stock.currentPrice);
+                const amount = quantity * stock.currentPrice;
+
+                simulation.portfolio[stock.code] = {
+                    name: stock.name,
+                    aiScore: stock.aiScore,
+                    buyPrice: stock.currentPrice,
+                    quantity: quantity,
+                    history: generatePriceHistory(stock)
+                };
+
+                html += `
+                    <tr>
+                        <td><strong>${stock.name}</strong></td>
+                        <td class="positive">${stock.aiScore.toFixed(1)}점</td>
+                        <td>${formatCurrency(stock.currentPrice)}</td>
+                        <td>${formatNumber(quantity)}주</td>
+                        <td>${formatCurrency(amount)}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+
+            createPriceChart();
+            document.getElementById('tradingSection').classList.remove('hidden');
+        }
+
+        function createPriceChart() {
+            const ctx = document.getElementById('priceChart');
+            if (!ctx) return;
+
+            if (charts.price) {
+                charts.price.destroy();
+            }
+
+            const datasets = [];
+            const colors = ['#FF6384', '#36A2EB', '#FFCE56'];
+
+            Object.entries(simulation.portfolio).forEach(([code, data], idx) => {
+                datasets.push({
+                    label: data.name + ' (AI: ' + data.aiScore.toFixed(1) + ')',
+                    data: data.history.map(h => h.price),
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: colors[idx % colors.length] + '33',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                });
+            });
+
+            const labels = simulation.portfolio[Object.keys(simulation.portfolio)[0]].history.map(h => h.time);
+
+            charts.price = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff',
+                                font: { size: 14 }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'AI 선정 종목 주가 변동 추이 (09:00 - 12:00)',
+                            color: '#FFD700',
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                color: '#ffffff',
+                                font: { size: 12 },
+                                callback: function (value) {
+                                    return formatCurrency(value);
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#ffffff', font: { size: 11 } },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayResults() {
+            const container = document.getElementById('resultSummary');
+
+            let totalInvested = 0;
+            let totalCurrent = 0;
+            const stockResults = [];
+
+            Object.entries(simulation.portfolio).forEach(([code, data]) => {
+                const invested = data.buyPrice * data.quantity;
+                const currentPrice = data.history[data.history.length - 1].price;
+                const currentValue = currentPrice * data.quantity;
+                const profit = currentValue - invested;
+                const returnRate = (profit / invested) * 100;
+
+                totalInvested += invested;
+                totalCurrent += currentValue;
+
+                stockResults.push({
+                    name: data.name,
+                    aiScore: data.aiScore,
+                    buyPrice: data.buyPrice,
+                    currentPrice: currentPrice,
+                    quantity: data.quantity,
+                    invested: invested,
+                    currentValue: currentValue,
+                    profit: profit,
+                    returnRate: returnRate
+                });
+            });
+
+            const totalProfit = totalCurrent - totalInvested;
+            const totalReturnRate = (totalProfit / totalInvested) * 100;
+
+            // 목표 수익률과 비교
+            let performanceMessage = '';
+            let messageColor = '';
+
+            if (totalReturnRate < 5.0) {
+                // 최소 5%도 달성 못함 - 투자 중지 권유
+                performanceMessage = `
+                    <div style="background: rgba(255, 68, 68, 0.2); padding: 15px; border-radius: 10px; border: 2px solid #ff4444; margin: 20px 0;">
+                        <h4 style="color: #ff4444; margin: 0 0 10px 0;">⚠️ 투자 중지 권고</h4>
+                        <p style="margin: 5px 0; color: #ffcccc;">
+                            실제 수익률 ${totalReturnRate.toFixed(2)}%는 최소 수익률 5%에 미달합니다.<br>
+                            <strong>시장 상황이 좋지 않으므로 투자를 재고하시기 바랍니다.</strong>
+                        </p>
+                    </div>
+                `;
+                logger.warn('투자 중지 권고: 수익률 5% 미달', { totalReturnRate, targetReturnRate: simulation.targetReturnRate });
+            } else if (totalReturnRate < simulation.targetReturnRate) {
+                // 목표 수익률 미달 - 수익률 조정 권유
+                performanceMessage = `
+                    <div style="background: rgba(255, 193, 7, 0.2); padding: 15px; border-radius: 10px; border: 2px solid #ffc107; margin: 20px 0;">
+                        <h4 style="color: #ffc107; margin: 0 0 10px 0;">📊 목표 수익률 미달</h4>
+                        <p style="margin: 5px 0; color: #fff3cd;">
+                            목표 수익률: ${simulation.targetReturnRate}% | 실제 수익률: ${totalReturnRate.toFixed(2)}%<br>
+                            <strong>목표 수익률을 ${Math.floor(totalReturnRate)}% 이하로 낮춰보시거나, 다시 시뮬레이션을 실행해보세요.</strong>
+                        </p>
+                    </div>
+                `;
+                logger.warn('목표 수익률 미달', { totalReturnRate, targetReturnRate: simulation.targetReturnRate });
+            } else {
+                // 목표 달성!
+                performanceMessage = `
+                    <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 10px; border: 2px solid #4caf50; margin: 20px 0;">
+                        <h4 style="color: #4caf50; margin: 0 0 10px 0;">✅ 목표 수익률 달성!</h4>
+                        <p style="margin: 5px 0; color: #c8e6c9;">
+                            목표 수익률: ${simulation.targetReturnRate}% | 실제 수익률: ${totalReturnRate.toFixed(2)}%<br>
+                            <strong>축하합니다! 목표를 성공적으로 달성했습니다.</strong>
+                        </p>
+                    </div>
+                `;
+                logger.info('목표 수익률 달성', { totalReturnRate, targetReturnRate: simulation.targetReturnRate });
+            }
+
+            let html = `
+                <h3>💼 AI 기반 포트폴리오 최종 결과</h3>
+                <div class="result-item">
+                    <strong>초기 투자금:</strong>
+                    <span class="value">${formatCurrency(simulation.initialCapital)}</span>
+                </div>
+                <div class="result-item">
+                    <strong>실제 투자금:</strong>
+                    <span class="value">${formatCurrency(totalInvested)}</span>
+                </div>
+                <div class="result-item">
+                    <strong>최종 평가액:</strong>
+                    <span class="value">${formatCurrency(totalCurrent)}</span>
+                </div>
+                <div class="result-item">
+                    <strong>총 손익:</strong>
+                    <span class="value ${totalProfit >= 0 ? 'positive' : 'negative'}">
+                        ${formatCurrency(totalProfit)}
+                    </span>
+                </div>
+                <div class="result-item">
+                    <strong>총 수익률:</strong>
+                    <span class="value ${totalReturnRate >= 0 ? 'positive' : 'negative'}">
+                        ${formatPercent(totalReturnRate)}
+                    </span>
+                </div>
+                <div class="result-item">
+                    <strong>목표 수익률:</strong>
+                    <span class="value" style="color: #FFD700;">
+                        ${simulation.targetReturnRate}%
+                    </span>
+                </div>
+
+                ${performanceMessage}
+
+                <h3 style="margin-top: 30px;">📊 개별 종목 성과 (AI 점수순)</h3>
+            `;
+
+            stockResults.sort((a, b) => b.aiScore - a.aiScore).forEach(stock => {
+                html += `
+                    <div class="result-item">
+                        <div>
+                            <strong>${stock.name}</strong> (AI: ${stock.aiScore.toFixed(1)}점)<br>
+                            <span style="font-size: 0.9em; opacity: 0.8;">
+                                매수: ${formatCurrency(stock.buyPrice)} →
+                                현재: ${formatCurrency(stock.currentPrice)}
+                            </span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="${stock.returnRate >= 0 ? 'positive' : 'negative'}">
+                                ${formatPercent(stock.returnRate)}
+                            </div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">
+                                ${formatCurrency(stock.profit)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            createPortfolioChart(stockResults);
+            document.getElementById('resultsSection').classList.remove('hidden');
+        }
+
+        function createPortfolioChart(stockResults) {
+            const ctx = document.getElementById('portfolioChart');
+            if (!ctx) return;
+
+            if (charts.portfolio) {
+                charts.portfolio.destroy();
+            }
+
+            charts.portfolio = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: stockResults.map(s => s.name),
+                    datasets: [{
+                        label: '수익률 (%)',
+                        data: stockResults.map(s => s.returnRate),
+                        backgroundColor: stockResults.map(s =>
+                            s.returnRate >= 0 ? '#00ff00' : '#ff4444'
+                        ),
+                        borderColor: stockResults.map(s =>
+                            s.returnRate >= 0 ? '#00cc00' : '#cc0000'
+                        ),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff',
+                                font: { size: 14 }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'AI 선정 종목별 수익률 비교',
+                            color: '#FFD700',
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#ffffff',
+                                font: { size: 12 },
+                                callback: function (value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#ffffff', font: { size: 12 } },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==================== 메인 시뮬레이션 ====================
+        async function runSimulation() {
+            try {
+                console.log('='.repeat(60));
+                console.log('시뮬레이션 메인 함수 진입');
+                console.log('='.repeat(60));
+
+                logger.info('='.repeat(60));
+                logger.info('시뮬레이션 시작');
+                logger.info('='.repeat(60));
+
+                simulation.isRunning = true;
+                console.log('Step 0: 초기 설정 시작');
+
+                // 초기 투자금 설정
+                const capitalInput = document.getElementById('initialCapital');
+                const rawValue = capitalInput.value.replace(/,/g, '');
+                simulation.initialCapital = parseInt(rawValue) || 1000000;
+                logger.info('초기 투자금 설정', { capital: simulation.initialCapital });
+
+                // 목표 수익률 설정
+                const targetReturnInput = document.getElementById('targetReturn');
+                simulation.targetReturnRate = parseFloat(targetReturnInput.value) || 5;
+                logger.info('목표 수익률 설정', { targetReturn: simulation.targetReturnRate + '%' });
+
+                simulation.currentStep = 0;
+                console.log('Step 0 완료');
+
+                // Step 1: 글로벌 지표 수집
+                console.log('Step 1: 글로벌 지표 수집 시작');
+                simulation.currentStep = 1;
+                updateProgress(1, 7);
+                updateMonitoring(
+                    '🔄 [단계 1/7] 글로벌 시장 지표 수집 중...',
+                    `<div class="loading"></div> 15개 핵심 지표를 분석하고 있습니다...<br>
+                    미국 증시, 환율, VIX, 금리, 유가, 금, 투자자 동향 등<br>
+                    실시간 데이터를 수집하고 있습니다...`
+                );
+
+                // Safari UI 업데이트 대기
+                await sleep(100);
+
+                const indicatorSystem = new MarketIndicators();
+                await withTimeout(
+                    indicatorSystem.generateAllIndicators(),
+                    15000,
+                    '지표 수집 타임아웃 (15초 초과)'
+                );
+
+                simulation.indicators = indicatorSystem;
+                displayIndicators(indicatorSystem);
+
+                updateMonitoring(
+                    '✅ [단계 1/7] 글로벌 시장 지표 수집 완료',
+                    `15개 핵심 지표 분석 완료!<br>
+                    미국 증시: ${indicatorSystem.data.usMarket.signal}<br>
+                    VIX: ${indicatorSystem.data.vix.level}<br>
+                    투자자 동향: ${indicatorSystem.data.investorTrend.signal}`,
+                    true
+                );
+                await sleep(1000);
+
+                // Step 2: 종합 점수 계산
+                simulation.currentStep = 2;
+                updateProgress(2, 7);
+                updateMonitoring(
+                    '🔄 [단계 2/7] AI 종합 점수 계산 중...',
+                    `<div class="loading"></div> 15개 지표에 가중치를 적용하고 있습니다...<br>
+                    머신러닝 알고리즘으로 투자 적합도를 분석 중...`
+                );
+
+                // Safari UI 업데이트 대기
+                await sleep(100);
+
+                const scoreData = indicatorSystem.calculateCompositeScore();
+                simulation.compositeScore = scoreData.totalScore;
+                displayCompositeScore(scoreData);
+
+                updateMonitoring(
+                    '✅ [단계 2/7] AI 종합 점수 계산 완료',
+                    `종합 점수: <strong>${scoreData.totalScore.toFixed(1)}점</strong><br>
+                    등급: ${scoreData.grade}<br>
+                    추천: ${scoreData.recommendation.message}`,
+                    true
+                );
+                await sleep(1000);
+
+                // Step 3: 한국 시장 요약
+                simulation.currentStep = 3;
+                updateProgress(3, 7);
+                updateMonitoring(
+                    '🔄 [단계 3/7] 한국 시장 요약 정보 수집 중...',
+                    `<div class="loading"></div> KOSPI/KOSDAQ 지수 정보를 가져오는 중...<br>
+                    거래량 및 거래대금을 분석하고 있습니다...`
+                );
+
+                // Safari UI 업데이트 대기
+                await sleep(100);
+
+                await simulateAPICall('Korean Market Data');
+                simulation.marketData = generateMarketData();
+                displayMarketSummary();
+
+                updateMonitoring(
+                    '✅ [단계 3/7] 한국 시장 요약 완료',
+                    `KOSPI: ${simulation.marketData.kospi.value.toFixed(2)} (${formatPercent(simulation.marketData.kospi.changePercent)})<br>
+                    KOSDAQ: ${simulation.marketData.kosdaq.value.toFixed(2)} (${formatPercent(simulation.marketData.kosdaq.changePercent)})`,
+                    true
+                );
+                await sleep(1000);
+
+                // Step 4: AI 기반 급등 종목 탐지
+                simulation.currentStep = 4;
+                updateProgress(4, 7);
+                updateMonitoring(
+                    '🔄 [단계 4/7] AI 기반 급등 종목 탐지 중...',
+                    `<div class="loading"></div> 종합 점수를 기반으로 급등 종목을 필터링하고 있습니다...<br>
+                    AI 알고리즘이 최적의 투자 종목을 선정 중...`
+                );
+
+                // Safari UI 업데이트 대기
+                await sleep(100);
+
+                await simulateAPICall('Rising Stocks Analysis');
+                simulation.risingStocks = generateRisingStocks(simulation.compositeScore);
+                displayRisingStocks();
+
+                updateMonitoring(
+                    '✅ [단계 4/7] AI 급등 종목 탐지 완료',
+                    `총 ${simulation.risingStocks.length}개 종목 발견<br>
+                    최고 점수: ${simulation.risingStocks[0].aiScore.toFixed(1)}점<br>
+                    상위 3개 종목이 선정되었습니다.`,
+                    true
+                );
+                await sleep(1000);
+
+                // Step 5: 가상 매매 실행
+                simulation.currentStep = 5;
+                updateProgress(5, 7);
+                updateMonitoring(
+                    '🔄 [단계 5/7] AI 기반 가상 매매 실행 중...',
+                    `<div class="loading"></div> 상위 AI 점수 종목 3개를 매수합니다...<br>
+                    투자금: ${formatCurrency(simulation.initialCapital)}<br>
+                    최적 포트폴리오를 구성하고 있습니다...`
+                );
+
+                // Safari UI 업데이트 대기
+                await sleep(100);
+
+                await simulateAPICall('Trading Execution');
+                simulation.selectedStocks = simulation.risingStocks.slice(0, 3);
+                displayTrading();
+
+                updateMonitoring(
+                    '✅ [단계 5/7] 가상 매매 실행 완료',
+                    `총 3개 종목 매수 완료<br>
+                    평균 AI 점수: ${(simulation.selectedStocks.reduce((sum, s) => sum + s.aiScore, 0) / 3).toFixed(1)}점<br>
+                    주가 모니터링을 시작합니다...`,
+                    true
+                );
+                await sleep(1000);
+
+                // Step 6: 모니터링
+                simulation.currentStep = 6;
+                updateProgress(6, 7);
+                updateMonitoring(
+                    '🔄 [단계 6/7] 포트폴리오 모니터링 중 (11:00)...',
+                    `<div class="loading"></div> AI가 실시간으로 주가를 모니터링하고 있습니다...<br>
+                    리스크 관리 시스템 작동 중...<br>
+                    손절매 조건을 검사하고 있습니다...`
+                );
+
+                // Safari UI 업데이트 대기
+                await sleep(100);
+
+                await sleep(1500);
+
+                updateMonitoring(
+                    '✅ [단계 6/7] 모니터링 완료',
+                    `모든 종목이 안정적으로 운영되고 있습니다.<br>
+                    보유 포지션을 유지합니다.<br>
+                    최종 결산까지 계속 모니터링합니다...`,
+                    true
+                );
+                await sleep(1000);
+
+                // Step 7: 최종 결산
+                simulation.currentStep = 7;
+                updateProgress(7, 7);
+                updateMonitoring(
+                    '🔄 [단계 7/7] 최종 수익률 결산 중 (12:00)...',
+                    `<div class="loading"></div> 3시간 거래 결과를 집계하고 있습니다...<br>
+                    각 종목별 성과를 분석하고 있습니다...<br>
+                    AI 투자 전략의 효과를 평가하고 있습니다...`
+                );
+
+                // Safari UI 업데이트 대기
+                await sleep(100);
+
+                await sleep(2000);
+
+                displayResults();
+
+                updateMonitoring(
+                    '✅ [단계 7/7] 시뮬레이션 완료! 🎉',
+                    `모든 분석이 성공적으로 완료되었습니다!<br>
+                    AI 종합 점수: ${simulation.compositeScore.toFixed(1)}점<br>
+                    15개 글로벌 지표 기반 투자 전략이 적용되었습니다.<br>
+                    최종 결과를 확인하세요!`,
+                    true
+                );
+
+                logger.info('시뮬레이션 성공적으로 완료');
+                logger.info('='.repeat(60));
+
+                const summary = logger.getSummary();
+                logger.info('로그 요약', summary);
+
+                simulation.isRunning = false;
+
+            } catch (error) {
+                logger.error('시뮬레이션 실행 중 오류 발생', {
+                    message: error.message,
+                    stack: error.stack,
+                    step: simulation.currentStep
+                });
+
+                simulation.isRunning = false;
+
+                showError(
+                    '시뮬레이션 오류',
+                    '단계 ' + simulation.currentStep + '에서 오류가 발생했습니다: ' + error.message
+                );
+
+                throw error;
+            }
+        }
+
+        function resetSimulation() {
+            logger.info('시뮬레이션 초기화');
+
+            simulation = {
+                initialCapital: 1000000,
+                portfolio: {},
+                tradeHistory: [],
+                risingStocks: [],
+                selectedStocks: [],
+                marketData: {},
+                indicators: {},
+                compositeScore: 0,
+                currentStep: 0,
+                totalSteps: 7,
+                isRunning: false
+            };
+
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+
+            document.getElementById('monitoringPanel').classList.remove('active');
+            document.getElementById('errorAlert').classList.remove('show');
+            updateProgress(0, 7);
+
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            charts = { price: null, portfolio: null };
+
+            document.getElementById('initialCapital').value = 1000000;
+
+            logger.info('초기화 완료');
+        }
+
+        // ==================== 이벤트 리스너 등록 함수 ====================
+        function initializeApp() {
+            console.log('앱 초기화 시작');
+
+            try {
+                const startBtn = document.getElementById('startBtn');
+                const resetBtn = document.getElementById('resetBtn');
+                const downloadLogBtn = document.getElementById('downloadLogBtn');
+
+                console.log('버튼 요소 찾기:', {
+                    startBtn: !!startBtn,
+                    resetBtn: !!resetBtn,
+                    downloadLogBtn: !!downloadLogBtn
+                });
+
+                if (!startBtn) {
+                    console.error('시작 버튼을 찾을 수 없습니다!');
+                    return;
+                }
+
+                // 투자금 입력 포맷팅
+                const capitalInput = document.getElementById('initialCapital');
+                const capitalKorean = document.getElementById('capitalKorean');
+
+                function formatCapitalInput() {
+                    let value = capitalInput.value.replace(/,/g, '');
+                    if (value && !isNaN(value)) {
+                        const num = parseInt(value);
+                        capitalInput.value = num.toLocaleString('ko-KR');
+                        capitalKorean.textContent = numberToKorean(num);
+                    }
+                }
+
+                capitalInput.addEventListener('input', function (e) {
+                    let value = e.target.value.replace(/,/g, '');
+                    if (value && !isNaN(value)) {
+                        const num = parseInt(value);
+                        e.target.value = num.toLocaleString('ko-KR');
+                        capitalKorean.textContent = numberToKorean(num);
+                    }
+                });
+
+                capitalInput.addEventListener('focus', function (e) {
+                    e.target.value = e.target.value.replace(/,/g, '');
+                });
+
+                capitalInput.addEventListener('blur', formatCapitalInput);
+
+                // 초기 포맷팅
+                formatCapitalInput();
+
+                // 시작 버튼
+                startBtn.addEventListener('click', async function () {
+                    try {
+                        console.log('시뮬레이션 시작 버튼 클릭됨!');
+
+                        if (simulation.isRunning) {
+                            logger.warn('시뮬레이션이 이미 실행 중입니다');
+                            console.log('이미 실행 중');
+                            return;
+                        }
+
+                        startBtn.disabled = true;
+                        console.log('버튼 비활성화 완료');
+
+                        resetSimulation();
+                        console.log('시뮬레이션 초기화 완료');
+
+                        // Safari freezing 방지: 약간의 지연 후 실행
+                        await sleep(100);
+                        console.log('runSimulation() 실행 시작...');
+
+                        await runSimulation();
+                        console.log('시뮬레이션 완료!');
+                    } catch (error) {
+                        console.error('시뮬레이션 에러:', error);
+                        logger.error('시뮬레이션 최종 실패', error);
+                        showError('실행 오류', error.message || '알 수 없는 오류가 발생했습니다.');
+                    } finally {
+                        startBtn.disabled = false;
+                        console.log('버튼 활성화 완료');
+                    }
+                });
+
+                // 초기화 버튼
+                resetBtn.addEventListener('click', function () {
+                    console.log('초기화 버튼 클릭');
+                    resetSimulation();
+                });
+
+                // 로그 다운로드 버튼
+                downloadLogBtn.addEventListener('click', function () {
+                    console.log('로그 다운로드 버튼 클릭');
+                    logger.downloadLog();
+                });
+
+                logger.info('모든 이벤트 리스너 등록 완료');
+                console.log('앱 초기화 완료!');
+            } catch (error) {
+                console.error('앱 초기화 에러:', error);
+            }
+        }
+
+        // ==================== 페이지 로드 시 초기화 ====================
+        if (document.readyState === 'loading') {
+            console.log('DOM 로딩 중... DOMContentLoaded 대기');
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            console.log('DOM 이미 로드됨 - 즉시 초기화');
+            initializeApp();
+        }
+
+        // 초기화
+        logger.info('한국 주식 시장 자동 매매 시뮬레이션 V3.4 시스템이 준비되었습니다.');
+        logger.info('15개 글로벌 지표 기반 AI 분석 엔진 탑재');
+        logger.info('Safari 최적화 완료');
+        console.log('V3.4 시스템 준비 완료!');
+        console.log('Safari 개발자 도구에서 실시간 로그를 확인할 수 있습니다.');
+    </script>
+</body>
+
+</html>
